@@ -18,14 +18,25 @@ if uploaded_pdf:
     response = requests.post(api_endpoint, files=files)
 
     if response.status_code == 200:
-        result = response.json()
-        st.subheader("🧾 Question Asked")
-        st.write(result["question"])
+    result = response.json()
+    
+    # 👇 Debug the returned structure
+    st.subheader("📦 Raw Response (for debugging)")
+    st.json(result)
 
-        st.subheader("📖 Extracted Summary")
-        st.success(result["summary"])
+    # ✅ Now safely access keys with fallback
+    question = result.get("question", "No question returned")
+    summary = result.get("summary", "No summary available")
+    themes = result.get("themes", "No themes extracted")
 
-        st.subheader("🧠 Identified Themes")
-        st.info(result["themes"])
-    else:
-        st.error("Something went wrong. Please try again.")
+    st.subheader("🧾 Question Asked")
+    st.write(question)
+
+    st.subheader("📖 Extracted Answer")
+    st.success(summary)
+
+    st.subheader("🧠 Identified Themes")
+    st.info(themes)
+else:
+    st.error("Something went wrong. Please try again.")
+
