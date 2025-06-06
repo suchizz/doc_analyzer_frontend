@@ -7,7 +7,7 @@ st.title("📘 DocAnalyzer: Chat with Your Documents")
 st.markdown("Upload a PDF and get AI-powered insights with key themes.")
 
 # 🔁 Update this URL each time Colab restarts
-api_endpoint = "https://9076-34-30-235-178.ngrok-free.app"
+api_endpoint = "https://9076-34-30-235-178.ngrok-free.app/analyze"
 
 uploaded_pdf = st.file_uploader("Choose a PDF file", type="pdf")
 
