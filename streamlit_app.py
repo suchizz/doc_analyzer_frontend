@@ -1,45 +1,46 @@
 import streamlit as st
 import requests
 
-# Set up the page
 st.set_page_config(page_title="DocAnalyzer", layout="centered")
 st.title("📘 DocAnalyzer: AI-Powered Theme Extraction from PDFs")
 
-# ⚠️ Replace this ngrok URL with your current Colab backend URL
-api_endpoint = "https://9076-34-30-235-178.ngrok-free.app/analyze"
+api_endpoint = "https://9076-34-30-235-178.ngrok-free.app/analyze"  # Replace this
 
-# Upload PDF
 uploaded_pdf = st.file_uploader("Upload a PDF document", type="pdf")
 
 if uploaded_pdf:
-    st.warning("⏳ Processing your document...")
+    st.warning("⏳ Uploading and analyzing document...")
 
-    # Send file to backend
     try:
-        files = {"file": uploaded_pdf.getvalue()}
+        files = {
+            "file": ("uploaded.pdf", uploaded_pdf.getvalue(), "application/pdf")
+        }
         response = requests.post(api_endpoint, files=files)
 
-        if response.status_code == 200:
+        try:
             result = response.json()
+        except Exception as e:
+            st.error("🚨 Backend returned an invalid response.")
+            st.code(response.text)
+            st.stop()
 
-            # Debug: Show raw response
-            st.subheader("📦 Raw Backend Response")
-            st.json(result)
+        # Show raw backend result
+        st.subheader("📦 Raw Backend Response")
+        st.json(result)
 
-            # Safe access to keys
-            question = result.get("question", "❓ Question not returned.")
-            summary = result.get("summary", "📝 No summary found.")
-            themes = result.get("themes", "🧠 No themes extracted.")
+        # Access keys safely
+        question = result.get("question", "No question found.")
+        summary = result.get("summary", "No summary found.")
+        themes = result.get("themes", "No themes found.")
 
-            st.subheader("🧾 Question Asked")
-            st.write(question)
+        st.subheader("🧾 Question Asked")
+        st.write(question)
 
-            st.subheader("📖 Extracted Answer")
-            st.success(summary)
+        st.subheader("📖 Extracted Answer")
+        st.success(summary)
 
-            st.subheader("🧠 Identified Themes")
-            st.info(themes)
-        else:
-            st.error(f"🚨 Backend error: {response.status_code}")
+        st.subheader("🧠 Identified Themes")
+        st.info(themes)
+
     except Exception as e:
         st.error(f"Something went wrong: {e}")
