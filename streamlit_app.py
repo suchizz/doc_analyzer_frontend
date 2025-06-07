@@ -51,19 +51,22 @@ if uploaded_file:
 
         # Parse JSON response
         try:
-            result = response.json()
-        except Exception:
-            st.error("❌ Could not parse response from backend. Check raw response above.")
-            st.stop()
+    result = response.json()
+except Exception as e:
+    st.error("⚠️ Backend response could not be parsed.")
+    st.code(response.text)
+    st.stop()
+
 
         # ----------------------------
         # ✅ Display Results
         # ----------------------------
         # Display question
+# Now safe to display
 st.subheader("🧾 Question Asked")
 st.write(result.get("question", "—"))
 
-# Display per-document table
+# Document-level answers
 st.subheader("📊 Document-Level Answers")
 doc_answers = result.get("documents", [])
 
@@ -74,7 +77,7 @@ if doc_answers:
 else:
     st.warning("No answers returned.")
 
-# Display synthesized theme-wise answer
+# Synthesized theme summary
 st.subheader("🧠 Synthesized Theme Answer")
 st.info(result.get("theme_summary", "No theme identified."))
 
