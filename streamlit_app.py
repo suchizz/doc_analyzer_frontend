@@ -22,7 +22,7 @@ with st.sidebar:
 # ----------------------------
 # 🔗 Backend API (replace with your current ngrok URL)
 # ----------------------------
-api_endpoint = "https://e23b-34-91-197-156.ngrok-free.app/analyze"  # ← update this every time
+api_endpoint = "https://5d12-35-247-104-158.ngrok-free.app/analyze"  # ← update this every time
 
 # ----------------------------
 # 📁 File Upload
