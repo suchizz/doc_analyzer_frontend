@@ -4,7 +4,7 @@ import requests
 st.set_page_config(page_title="DocAnalyzer", layout="centered")
 st.title("📘 DocAnalyzer: AI-Powered Theme Extraction from PDFs")
 
-api_endpoint = "https://9076-34-30-235-178.ngrok-free.app/analyze"  # Replace this
+api_endpoint = "https://8aa5-34-19-97-170.ngrok-free.app/analyze"  # Replace this
 
 uploaded_pdf = st.file_uploader("Upload a PDF document", type="pdf")
 
