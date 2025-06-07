@@ -59,17 +59,24 @@ if uploaded_file:
         # ----------------------------
         # ✅ Display Results
         # ----------------------------
-        st.success("✅ Document successfully processed!")
-        st.divider()
+        # Display question
+st.subheader("🧾 Question Asked")
+st.write(result.get("question", "—"))
 
-        st.subheader("🧾 Question Asked")
-        st.write(result.get("question", "—"))
+# Display per-document table
+st.subheader("📊 Document-Level Answers")
+doc_answers = result.get("documents", [])
 
-        st.subheader("📘 Extracted Summary")
-        st.success(result.get("summary", "—"))
+if doc_answers:
+    import pandas as pd
+    df = pd.DataFrame(doc_answers)
+    st.dataframe(df[["document", "page", "paragraph", "answer"]], use_container_width=True)
+else:
+    st.warning("No answers returned.")
 
-        st.subheader("🎯 Identified Themes")
-        st.info(result.get("themes", "—"))
+# Display synthesized theme-wise answer
+st.subheader("🧠 Synthesized Theme Answer")
+st.info(result.get("theme_summary", "No theme identified."))
 
     except Exception as e:
         st.error(f"🔥 Something went wrong while contacting the backend:\n\n{e}")
