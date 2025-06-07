@@ -13,16 +13,24 @@ if uploaded_pdf:
 
     try:
         files = {
-            "file": ("uploaded.pdf", uploaded_pdf.getvalue(), "application/pdf")
+            "file": ("doc.pdf", uploaded_pdf.getvalue(), "application/pdf")
         }
         response = requests.post(api_endpoint, files=files)
 
+        st.subheader("📦 Raw Backend Response")
+        st.code(response.text)  # 👈 shows backend text as-is
+
         try:
             result = response.json()
-        except Exception as e:
-            st.error("🚨 Backend returned an invalid response.")
-            st.code(response.text)
+        except Exception:
+            st.error("⚠️ Could not parse JSON. Check raw response above.")
             st.stop()
+
+        # Show parsed values if JSON is valid
+        st.write("✅ Parsed:", result)
+        
+    except Exception as e:
+        st.error(f"🔥 Critical failure: {e}")
 
         # Show raw backend result
         st.subheader("📦 Raw Backend Response")
