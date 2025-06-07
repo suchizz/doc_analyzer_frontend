@@ -1,54 +1,76 @@
 import streamlit as st
 import requests
 
-st.set_page_config(page_title="DocAnalyzer", layout="centered")
-st.title("📘 DocAnalyzer: AI-Powered Theme Extraction from PDFs")
+# ----------------------------
+# 🎨 Page Configuration
+# ----------------------------
+st.set_page_config(
+    page_title="📘 AI Theme Identifier",
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
 
-api_endpoint = "https://e23b-34-91-197-156.ngrok-free.app//analyze"  # Replace this
+# ----------------------------
+# 🖼 Sidebar Branding
+# ----------------------------
+with st.sidebar:
+    st.title("🧠 Gen-AI DocBot")
+    st.markdown("Upload a PDF and get AI-powered summaries + themes.")
+    st.markdown("Built for **Wasserstoff Internship Task**")
+    st.caption("Made with ❤️ using Hugging Face + Streamlit")
 
-uploaded_pdf = st.file_uploader("Upload a PDF document", type="pdf")
+# ----------------------------
+# 🔗 Backend API (replace with your current ngrok URL)
+# ----------------------------
+api_endpoint = "https://e23b-34-91-197-156.ngrok-free.app/analyze"  # ← update this every time
 
-if uploaded_pdf:
-    st.warning("⏳ Uploading and analyzing document...")
+# ----------------------------
+# 📁 File Upload
+# ----------------------------
+st.header("📄 Upload Your PDF Document")
+uploaded_file = st.file_uploader("Select a PDF file", type=["pdf"])
+
+# ----------------------------
+# 🚀 On Upload: Send to Backend
+# ----------------------------
+if uploaded_file:
+    st.info("⏳ Uploading and analyzing your document. Please wait...")
 
     try:
+        # Format file for request
         files = {
-            "file": ("doc.pdf", uploaded_pdf.getvalue(), "application/pdf")
+            "file": ("document.pdf", uploaded_file.getvalue(), "application/pdf")
         }
+
+        # Call backend API
         response = requests.post(api_endpoint, files=files)
 
-        st.subheader("📦 Raw Backend Response")
-        st.code(response.text)  # 👈 shows backend text as-is
+        # Show raw response for debugging (optional)
+        st.subheader("📦 Raw Response")
+        st.code(response.text)
 
+        # Parse JSON response
         try:
             result = response.json()
         except Exception:
-            st.error("⚠️ Could not parse JSON. Check raw response above.")
+            st.error("❌ Could not parse response from backend. Check raw response above.")
             st.stop()
 
-        # Show parsed values if JSON is valid
-        st.write("✅ Parsed:", result)
-        
-    except Exception as e:
-        st.error(f"🔥 Critical failure: {e}")
-
-        # Show raw backend result
-        st.subheader("📦 Raw Backend Response")
-        st.json(result)
-
-        # Access keys safely
-        question = result.get("question", "No question found.")
-        summary = result.get("summary", "No summary found.")
-        themes = result.get("themes", "No themes found.")
+        # ----------------------------
+        # ✅ Display Results
+        # ----------------------------
+        st.success("✅ Document successfully processed!")
+        st.divider()
 
         st.subheader("🧾 Question Asked")
-        st.write(question)
+        st.write(result.get("question", "—"))
 
-        st.subheader("📖 Extracted Answer")
-        st.success(summary)
+        st.subheader("📘 Extracted Summary")
+        st.success(result.get("summary", "—"))
 
-        st.subheader("🧠 Identified Themes")
-        st.info(themes)
+        st.subheader("🎯 Identified Themes")
+        st.info(result.get("themes", "—"))
 
     except Exception as e:
-        st.error(f"Something went wrong: {e}")
+        st.error(f"🔥 Something went wrong while contacting the backend:\n\n{e}")
+
