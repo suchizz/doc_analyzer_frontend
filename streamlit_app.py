@@ -23,7 +23,7 @@ with st.sidebar:
 # ----------------------------
 # 🔗 BACKEND API URL (Update this when ngrok restarts)
 # ----------------------------
-api_endpoint = "https://8634-34-85-229-237.ngrok-free.app/analyze"  # 🔁 Replace this with your live ngrok URL
+api_endpoint = "https://76c0-34-85-229-237.ngrok-free.app/analyze"  # 🔁 Replace this with your live ngrok URL
 
 # ----------------------------
 # 📤 Upload Multiple PDFs
