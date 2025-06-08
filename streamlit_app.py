@@ -3,95 +3,96 @@ import requests
 import pandas as pd
 
 # ----------------------------
-# 🎨 Page Settings
+# 🎨 Streamlit Setup
 # ----------------------------
 st.set_page_config(
-    page_title="Gen-AI DocBot",
-    layout="centered",
-    initial_sidebar_state="expanded"
+    page_title="📚 Gen-AI DocBot",
+    layout="centered"
 )
 
 # ----------------------------
-# 🖼 Sidebar Branding
+# 🔗 BACKEND URL
+# ----------------------------
+api_endpoint = "https://2402-34-85-229-237.ngrok-free.app/analyze"  # 🔁 Replace every ngrok session
+
+# ----------------------------
+# 🧾 Sidebar
 # ----------------------------
 with st.sidebar:
-    st.title("📚 Gen-AI DocBot")
-    st.markdown("Upload multiple documents and extract per-document answers & cross-document themes.")
-    st.caption("🚀 Wasserstoff Internship Task")
+    st.title("📘 Gen-AI DocBot")
+    st.markdown("Upload multiple documents and ask any question to extract answers & cross-document themes.")
+    st.markdown("📍 Built for **Wasserstoff Gen-AI Internship Task**")
     st.markdown("---")
 
 # ----------------------------
-# 🔗 BACKEND API URL (Replace ngrok link when restarted)
+# 📂 Upload PDFs Section
 # ----------------------------
-api_endpoint = "https://2402-34-85-229-237.ngrok-free.app/analyze"  # ← Replace this
-
-# ----------------------------
-# 💬 Ask a Question
-# ----------------------------
-st.header("💬 Ask Your Question")
-question = st.text_input(
-    "Enter your question:",
-    value="What are the key issues or themes discussed in these documents?"
-)
-
-# ----------------------------
-# 📤 Upload Multiple PDFs
-# ----------------------------
-st.header("📄 Upload Your Documents")
+st.header("📄 Step 1: Upload Your Documents")
 uploaded_files = st.file_uploader("Upload one or more PDF files", type=["pdf"], accept_multiple_files=True)
 
+if "docs_uploaded" not in st.session_state:
+    st.session_state.docs_uploaded = False
+if uploaded_files:
+    st.session_state.files = uploaded_files
+    st.session_state.docs_uploaded = True
+    st.success("✅ Documents uploaded! Now ask your question below.")
+
 # ----------------------------
-# 🚀 Analyze on Submit
+# 💬 Ask Question Section
 # ----------------------------
-if uploaded_files and question:
-    st.info("⏳ Uploading documents and processing your question...")
+if st.session_state.docs_uploaded:
+    st.markdown("---")
+    st.header("💬 Step 2: Ask a Question")
 
-    try:
-        # Prepare multipart form data
-        files = [("files", (file.name, file.getvalue(), "application/pdf")) for file in uploaded_files]
-        data = {"question": question}
+    question = st.text_input(
+        "Enter your question:",
+        value="What are the key themes discussed across all documents?"
+    )
 
-        response = requests.post(api_endpoint, files=files, data=data)
+    if st.button("🔍 Analyze"):
+        with st.spinner("Processing your question..."):
 
-        # 📦 Debug: Show raw backend output
-        st.subheader("📦 Raw Backend Response")
-        st.code(response.text)
+            try:
+                files = [
+                    ("files", (f.name, f.getvalue(), "application/pdf"))
+                    for f in st.session_state.files
+                ]
+                data = {"question": question}
+                response = requests.post(api_endpoint, files=files, data=data)
 
-        # ✅ Parse response
-        try:
-            result = response.json()
-        except Exception:
-            st.error("❌ Could not parse backend response. Check raw output above.")
-            st.stop()
+                # Raw backend text
+                st.subheader("📦 Raw Backend Response")
+                st.code(response.text)
 
-        # ----------------------------
-        # ✅ Show Results
-        # ----------------------------
+                try:
+                    result = response.json()
+                except Exception:
+                    st.error("❌ Could not parse backend response.")
+                    st.stop()
 
-        # Question
-        st.subheader("🧾 Question Asked")
-        st.write(result.get("question", "—"))
+                # 🧾 Question
+                st.subheader("🧾 Question Asked")
+                st.write(result.get("question", "—"))
 
-        # Document-level answers
-        st.subheader("📊 Document-Level Answers")
-        doc_answers = result.get("documents", [])
+                # 📊 Per-document answers
+                st.subheader("📊 Document-Level Answers")
+                docs = result.get("documents", [])
+                if docs:
+                    df = pd.DataFrame(docs)
+                    df.rename(columns={
+                        "document": "Document",
+                        "page": "Page",
+                        "paragraph": "Paragraph",
+                        "answer": "Extracted Answer"
+                    }, inplace=True)
+                    st.dataframe(df, use_container_width=True)
+                else:
+                    st.warning("No answers returned.")
 
-        if doc_answers:
-            df = pd.DataFrame(doc_answers)
-            df.rename(columns={
-                "document": "Document",
-                "page": "Page",
-                "paragraph": "Paragraph",
-                "answer": "Extracted Answer"
-            }, inplace=True)
-            st.dataframe(df, use_container_width=True)
-        else:
-            st.warning("No answers returned from any documents.")
+                # 🧠 Theme Summary
+                st.subheader("🧠 Synthesized Theme Answer")
+                st.info(result.get("theme_summary", "No themes identified."))
 
-        # Synthesized summary
-        st.subheader("🧠 Synthesized Theme Answer")
-        st.info(result.get("theme_summary", "No theme identified."))
-
-    except Exception as e:
-        st.error(f"🚨 Error connecting to backend:\n\n{e}")
+            except Exception as e:
+                st.error(f"🚨 Error communicating with backend: {e}")
 
