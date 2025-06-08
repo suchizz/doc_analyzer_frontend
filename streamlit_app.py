@@ -13,7 +13,7 @@ st.set_page_config(
 # ----------------------------
 # 🔗 BACKEND URL
 # ----------------------------
-api_endpoint = "https://2402-34-85-229-237.ngrok-free.app/analyze"  # 🔁 Replace every ngrok session
+api_endpoint = "https://0cc6-34-85-229-237.ngrok-free.app/analyze"  # 🔁 Replace every ngrok session
 
 # ----------------------------
 # 🧾 Sidebar
