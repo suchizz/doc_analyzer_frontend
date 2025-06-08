@@ -23,7 +23,7 @@ with st.sidebar:
 # ----------------------------
 # 🔗 BACKEND API URL (Update this when ngrok restarts)
 # ----------------------------
-api_endpoint = "https://76c0-34-85-229-237.ngrok-free.app/analyze"  # 🔁 Replace this with your live ngrok URL
+api_endpoint = "https://2402-34-85-229-237.ngrok-free.app/analyze"  # 🔁 Replace this with your live ngrok URL
 
 # ----------------------------
 # 📤 Upload Multiple PDFs
@@ -40,7 +40,8 @@ if uploaded_files:
     try:
         # Prepare files for FastAPI
         files = [("files", (file.name, file.getvalue(), "application/pdf")) for file in uploaded_files]
-        response = requests.post(api_endpoint, files=files)
+        response = requests.post(api_endpoint, files=files, data={"question": question})
+
 
         # 📦 Show raw backend response for debugging
         st.subheader("📦 Raw Backend Response")
@@ -58,8 +59,12 @@ if uploaded_files:
         # ----------------------------
 
         # 🧾 Question Asked
-        st.subheader("🧾 Question Asked")
-        st.write(result.get("question", "—"))
+        st.header("💬 Ask Your Question")
+question = st.text_input(
+    "What would you like to ask?",
+    value="What are the key issues or themes discussed in these documents?"
+)
+
 
         # 📊 Document-Level Answers Table
         st.subheader("📊 Document-Level Answers")
