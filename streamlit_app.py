@@ -1,116 +1,87 @@
+# ✅ Packed Streamlit App: doc_analyzer_frontend (Extra Credit Version)
+
 import streamlit as st
 import requests
 import pandas as pd
+import datetime
 
-# ----------------------------
-# 🎨 Streamlit Page Config
-# ----------------------------
-st.set_page_config(
-    page_title="📚 Gen-AI DocBot",
-    layout="centered",
-)
+# Page config
+st.set_page_config(page_title="📚 DocBot+", layout="wide")
 
-# ----------------------------
-# 🔗 BACKEND NGROK URL
-# ----------------------------
-api_endpoint = "https://c6ce-34-90-102-224.ngrok-free.app/analyze"  # ⛳ Replace this
+# Sidebar filters
+st.sidebar.title("📂 Document Filters")
+selected_types = st.sidebar.multiselect("Document Type", ["research", "cv", "report"], default=["research", "report", "cv"])
+selected_authors = st.sidebar.multiselect("Author", ["Suchetana Jana", "Esteban Aucejo", "NBER"], default=["Suchetana Jana", "NBER"])
+selected_dates = st.sidebar.date_input("Date Range", [datetime.date(2020, 1, 1), datetime.date.today()])
 
-# ----------------------------
-# 📘 Sidebar
-# ----------------------------
-with st.sidebar:
-    st.title("📘 Gen-AI DocBot")
-    st.markdown(
-        """
-        Upload multiple PDF documents and ask questions to extract specific answers with document citations.
-        
-        Built for **Wasserstoff Gen-AI Internship Task** 🚀
-        """
-    )
-    st.markdown("---")
+st.title("📚 Document Analyzer + Theme Identifier")
 
-# ----------------------------
-# Step 1: Upload PDFs
-# ----------------------------
-st.header("📄 Step 1: Upload Your Documents")
-uploaded_files = st.file_uploader("Upload one or more PDF files", type=["pdf"], accept_multiple_files=True)
-
-if "docs_uploaded" not in st.session_state:
-    st.session_state.docs_uploaded = False
+# Upload PDFs
+uploaded_files = st.file_uploader("Upload multiple PDF files", type="pdf", accept_multiple_files=True)
 
 if uploaded_files:
-    st.session_state.files = uploaded_files
-    st.session_state.docs_uploaded = True
-    st.success("✅ Documents uploaded successfully! Now ask a question.")
+    st.success(f"✅ {len(uploaded_files)} documents uploaded.")
 
-# ----------------------------
-# Step 2: Ask a Question
-# ----------------------------
-if st.session_state.docs_uploaded:
-    st.markdown("---")
-    st.header("💬 Step 2: Ask a Question")
+    selected_files = st.multiselect("📄 Include/Exclude Documents", [f.name for f in uploaded_files], default=[f.name for f in uploaded_files])
 
-    question = st.text_input(
-        "Enter your question:",
-        value="What are the key issues or themes discussed in these documents?"
-    )
+    question = st.text_input("💬 Ask a Question:", "What are the key findings in these documents?")
 
     if st.button("🔍 Analyze"):
-        with st.spinner("🔎 Processing your question..."):
+        with st.spinner("Analyzing documents and generating answers..."):
+            # Filter and prepare file upload
+            filtered = [f for f in uploaded_files if f.name in selected_files]
+            files = [("files", (f.name, f.getvalue(), "application/pdf")) for f in filtered]
+            data = {"question": question}
+
+            # Send to backend
+            response = requests.post("https://03dd-34-90-102-224.ngrok-free.app/analyze", files=files, data=data)
 
             try:
-                # Prepare files + form data
-                files = [
-                    ("files", (file.name, file.getvalue(), "application/pdf"))
-                    for file in st.session_state.files
-                ]
-                data = {"question": question}
-
-                # Send request to FastAPI backend
-                response = requests.post(api_endpoint, files=files, data=data)
-
-                # Show raw backend response
-                st.subheader("📦 Raw Backend Response")
+                result = response.json()
+            except:
+                st.error("❌ Failed to parse backend response")
                 st.code(response.text)
+                st.stop()
 
-                try:
-                    result = response.json()
-                except Exception:
-                    st.error("❌ Could not parse backend response.")
-                    st.stop()
+            # Output - Raw JSON
+            with st.expander("📦 Raw Response"):
+                st.json(result)
 
-                # 🧾 Question Asked
-                st.subheader("🧾 Question Asked")
-                st.write(result.get("question", "—"))
+            # Display user question
+            st.subheader("🧾 Question Asked")
+            st.write(result.get("question", "—"))
 
-                # 💬 Direct Answers
-                st.subheader("💬 Direct Answers with Citations")
-                answers = result.get("direct_answers", [])
-                if answers:
-                    for ans in answers:
-                        st.markdown(f"🔹 {ans}")
-                else:
-                    st.warning("No direct answers found.")
+            # Direct Answers
+            st.subheader("💬 Direct Answers with Citations")
+            for ans in result.get("direct_answers", []):
+                st.markdown(ans)
 
-                # 📊 Document-Level Answer Table
-                st.subheader("📊 Document-Level Answer Table")
-                docs = result.get("documents", [])
-                if docs:
-                    df = pd.DataFrame(docs)
-                    df.rename(columns={
-                        "document": "Document",
-                        "page": "Page",
-                        "paragraph": "Paragraph",
-                        "answer": "Extracted Answer"
-                    }, inplace=True)
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.warning("No relevant document answers found.")
+            # Document-Level Table
+            st.subheader("📊 Document-Level Answer Table")
+            docs = result.get("documents", [])
+            if docs:
+                df = pd.DataFrame(docs)
+                df.rename(columns={
+                    "document": "Document",
+                    "page": "Page",
+                    "paragraph": "Paragraph",
+                    "sentence": "Sentence",
+                    "answer": "Extracted Answer"
+                }, inplace=True)
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.warning("No document matches found.")
 
-                # 🧠 Synthesized Theme Summary
-                st.subheader("🧠 Synthesized Theme Summary")
-                st.info(result.get("theme_summary", "No theme available."))
+            # Theme Summary
+            st.subheader("🧠 Synthesized Theme Summary")
+            st.markdown(result.get("theme_summary", "No theme summary available."))
 
-            except Exception as e:
-                st.error(f"🚨 Error communicating with backend:\n\n{e}")
+            # Source Downloads
+            st.subheader("📂 Download Documents")
+            for file in filtered:
+                st.download_button(f"⬇️ {file.name}", file.getvalue(), file.name)
+
+else:
+    st.info("📁 Upload at least one document to begin.")
+
 
