@@ -3,42 +3,48 @@ import requests
 import pandas as pd
 
 # ----------------------------
-# 🎨 Streamlit Setup
+# 🎨 Streamlit Page Config
 # ----------------------------
 st.set_page_config(
     page_title="📚 Gen-AI DocBot",
-    layout="centered"
+    layout="centered",
 )
 
 # ----------------------------
-# 🔗 BACKEND URL
+# 🔗 BACKEND NGROK URL
 # ----------------------------
-api_endpoint = "https://0cc6-34-85-229-237.ngrok-free.app/analyze"  # 🔁 Replace every ngrok session
+api_endpoint = "https://e8d9-35-227-142-81.ngrok-free.app/analyze"  # ⛳ Replace this
 
 # ----------------------------
-# 🧾 Sidebar
+# 📘 Sidebar
 # ----------------------------
 with st.sidebar:
     st.title("📘 Gen-AI DocBot")
-    st.markdown("Upload multiple documents and ask any question to extract answers & cross-document themes.")
-    st.markdown("📍 Built for **Wasserstoff Gen-AI Internship Task**")
+    st.markdown(
+        """
+        Upload multiple PDF documents and ask questions to extract specific answers with document citations.
+        
+        Built for **Wasserstoff Gen-AI Internship Task** 🚀
+        """
+    )
     st.markdown("---")
 
 # ----------------------------
-# 📂 Upload PDFs Section
+# Step 1: Upload PDFs
 # ----------------------------
 st.header("📄 Step 1: Upload Your Documents")
 uploaded_files = st.file_uploader("Upload one or more PDF files", type=["pdf"], accept_multiple_files=True)
 
 if "docs_uploaded" not in st.session_state:
     st.session_state.docs_uploaded = False
+
 if uploaded_files:
     st.session_state.files = uploaded_files
     st.session_state.docs_uploaded = True
-    st.success("✅ Documents uploaded! Now ask your question below.")
+    st.success("✅ Documents uploaded successfully! Now ask a question.")
 
 # ----------------------------
-# 💬 Ask Question Section
+# Step 2: Ask a Question
 # ----------------------------
 if st.session_state.docs_uploaded:
     st.markdown("---")
@@ -46,21 +52,24 @@ if st.session_state.docs_uploaded:
 
     question = st.text_input(
         "Enter your question:",
-        value="What are the key themes discussed across all documents?"
+        value="What are the key issues or themes discussed in these documents?"
     )
 
     if st.button("🔍 Analyze"):
-        with st.spinner("Processing your question..."):
+        with st.spinner("🔎 Processing your question..."):
 
             try:
+                # Prepare files + form data
                 files = [
-                    ("files", (f.name, f.getvalue(), "application/pdf"))
-                    for f in st.session_state.files
+                    ("files", (file.name, file.getvalue(), "application/pdf"))
+                    for file in st.session_state.files
                 ]
                 data = {"question": question}
+
+                # Send request to FastAPI backend
                 response = requests.post(api_endpoint, files=files, data=data)
 
-                # Raw backend text
+                # Show raw backend response
                 st.subheader("📦 Raw Backend Response")
                 st.code(response.text)
 
@@ -70,12 +79,21 @@ if st.session_state.docs_uploaded:
                     st.error("❌ Could not parse backend response.")
                     st.stop()
 
-                # 🧾 Question
+                # 🧾 Question Asked
                 st.subheader("🧾 Question Asked")
                 st.write(result.get("question", "—"))
 
-                # 📊 Per-document answers
-                st.subheader("📊 Document-Level Answers")
+                # 💬 Direct Answers
+                st.subheader("💬 Direct Answers with Citations")
+                answers = result.get("direct_answers", [])
+                if answers:
+                    for ans in answers:
+                        st.markdown(f"🔹 {ans}")
+                else:
+                    st.warning("No direct answers found.")
+
+                # 📊 Document-Level Answer Table
+                st.subheader("📊 Document-Level Answer Table")
                 docs = result.get("documents", [])
                 if docs:
                     df = pd.DataFrame(docs)
@@ -87,12 +105,12 @@ if st.session_state.docs_uploaded:
                     }, inplace=True)
                     st.dataframe(df, use_container_width=True)
                 else:
-                    st.warning("No answers returned.")
+                    st.warning("No relevant document answers found.")
 
-                # 🧠 Theme Summary
-                st.subheader("🧠 Synthesized Theme Answer")
-                st.info(result.get("theme_summary", "No themes identified."))
+                # 🧠 Synthesized Theme Summary
+                st.subheader("🧠 Synthesized Theme Summary")
+                st.info(result.get("theme_summary", "No theme available."))
 
             except Exception as e:
-                st.error(f"🚨 Error communicating with backend: {e}")
+                st.error(f"🚨 Error communicating with backend:\n\n{e}")
 
