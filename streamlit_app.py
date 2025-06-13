@@ -34,7 +34,7 @@ if uploaded_files:
             data = {"question": question}
 
             # Send to backend
-            response = requests.post("https://3c5b-35-232-144-248.ngrok-free.app/analyze", files=files, data=data)
+            response = requests.post("https://cb10-35-232-144-248.ngrok-free.app/analyze", files=files, data=data)
 
             try:
                 result = response.json()
