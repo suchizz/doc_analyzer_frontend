@@ -1,51 +1,68 @@
 import streamlit as st
 import requests
 import pandas as pd
+import datetime
 
-st.set_page_config(page_title="📄 Doc Analyzer", layout="centered")
+# Page config
+st.set_page_config(page_title="📚 DocBot+", layout="wide")
 
-st.title("📄 Document Analyzer")
+# Sidebar filters
+st.sidebar.title("📂 Document Filters")
+selected_types = st.sidebar.multiselect("Document Type", ["research", "cv", "report"], default=["research", "report", "cv"])
+selected_authors = st.sidebar.multiselect("Author", ["Suchetana Jana", "Esteban Aucejo", "NBER"], default=["Suchetana Jana", "NBER"])
+selected_dates = st.sidebar.date_input("Date Range", [datetime.date(2020, 1, 1), datetime.date.today()])
 
-uploaded_files = st.file_uploader("Upload one or more PDFs", type="pdf", accept_multiple_files=True)
-question = st.text_input("💬 Ask a question about the documents")
+st.title("📚 Document Analyzer + Theme Identifier")
 
-if st.button("🔍 Analyze"):
-    if not uploaded_files:
-        st.warning("Please upload at least one PDF file.")
-    elif not question:
-        st.warning("Please enter a question.")
-    else:
-        st.info("Sending request to backend...")
+# Upload PDFs
+uploaded_files = st.file_uploader("Upload multiple PDF files", type="pdf", accept_multiple_files=True)
 
-        # Prepare files
-        files = []
-        for file in uploaded_files:
-            file_bytes = file.read()
-            files.append(("files", (file.name, file_bytes, "application/pdf")))
+if uploaded_files:
+    st.success(f"✅ {len(uploaded_files)} documents uploaded.")
 
-        # Form field
-        data = {"question": question}
+    selected_files = st.multiselect("📄 Include/Exclude Documents", [f.name for f in uploaded_files], default=[f.name for f in uploaded_files])
 
-        # Send POST request
-        try:
-            res = requests.post("https://9c33-35-232-144-248.ngrok-free.app/analyze", files=files, data=data)
-            st.success(f"✅ Response received: {res.status_code}")
+    question = st.text_input("💬 Ask a Question:", "What are the key findings in these documents?")
 
+    if st.button("🔍 Analyze"):
+        with st.spinner("Analyzing documents and generating answers..."):
+            # Filter and prepare file upload
+            filtered = [f for f in uploaded_files if f.name in selected_files]
+            files = []
+            for f in filtered:
+                file_bytes = f.read()
+                files.append(("files", (f.name, file_bytes, "application/pdf")))
+            data = {"question": question}
+
+            # Send to backend
             try:
-                result = res.json()
-            except:
-                st.error("❌ Failed to parse response JSON")
-                st.code(res.text)
+                response = requests.post("https://89b5-34-57-16-2.ngrok-free.app/analyze", files=files, data=data)
+            except Exception as e:
+                st.error(f"❌ Request failed: {e}")
                 st.stop()
 
+            try:
+                result = response.json()
+            except:
+                st.error("❌ Failed to parse backend response")
+                st.code(response.text)
+                st.stop()
+
+            # Output - Raw JSON
+            with st.expander("📦 Raw Response"):
+                st.json(result)
+
+            # Display user question
             st.subheader("🧾 Question Asked")
             st.write(result.get("question", "—"))
 
-            st.subheader("💬 Direct Answers")
+            # Direct Answers
+            st.subheader("💬 Direct Answers with Citations")
             for ans in result.get("direct_answers", []):
                 st.markdown(ans)
 
-            st.subheader("📊 Document Table")
+            # Document-Level Table
+            st.subheader("📊 Document-Level Answer Table")
             docs = result.get("documents", [])
             if docs:
                 df = pd.DataFrame(docs)
@@ -58,12 +75,14 @@ if st.button("🔍 Analyze"):
                 }, inplace=True)
                 st.dataframe(df, use_container_width=True)
             else:
-                st.warning("No matching content found.")
+                st.warning("No document matches found.")
 
+            # Theme Summary
             st.subheader("🧠 Synthesized Theme Summary")
-            st.info(result.get("theme_summary", "No theme summary available."))
+            st.markdown(result.get("theme_summary", "No theme summary available."))
 
-        except Exception as e:
-            st.error(f"Request failed: {e}")
-
+            # Source Downloads
+            st.subheader("📂 Download Documents")
+            for file in filtered:
+                st.download_button(f"⬇️ {file.name}", file.getvalue(), file.name)
 
