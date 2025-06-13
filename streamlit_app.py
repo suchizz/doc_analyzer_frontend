@@ -1,4 +1,4 @@
-# ✅ Packed Streamlit App: doc_analyzer_frontend (Extra Credit Version)
+# Packed Streamlit App: doc_analyzer_frontend (Extra Credit Version)
 
 import streamlit as st
 import requests
@@ -34,7 +34,7 @@ if uploaded_files:
             data = {"question": question}
 
             # Send to backend
-            response = requests.post("https://309c-34-57-16-2.ngrok-free.app/analyze", files=files, data=data)
+            response = requests.post("https://cae0-34-74-143-135.ngrok-free.app/analyze", files=files, data=data)
 
             try:
                 result = response.json()
