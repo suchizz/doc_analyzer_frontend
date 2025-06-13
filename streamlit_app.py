@@ -1,3 +1,5 @@
+# ✅ Packed Streamlit App: doc_analyzer_frontend (Extra Credit Version)
+
 import streamlit as st
 import requests
 import pandas as pd
@@ -28,18 +30,11 @@ if uploaded_files:
         with st.spinner("Analyzing documents and generating answers..."):
             # Filter and prepare file upload
             filtered = [f for f in uploaded_files if f.name in selected_files]
-            files = []
-            for f in filtered:
-                file_bytes = f.read()
-                files.append(("files", (f.name, file_bytes, "application/pdf")))
+            files = [("files", (f.name, f.getvalue(), "application/pdf")) for f in filtered]
             data = {"question": question}
 
             # Send to backend
-            try:
-                response = requests.post("https://89b5-34-57-16-2.ngrok-free.app/analyze", files=files, data=data)
-            except Exception as e:
-                st.error(f"❌ Request failed: {e}")
-                st.stop()
+            response = requests.post("https://89b5-34-57-16-2.ngrok-free.app/analyze", files=files, data=data)
 
             try:
                 result = response.json()
@@ -85,4 +80,8 @@ if uploaded_files:
             st.subheader("📂 Download Documents")
             for file in filtered:
                 st.download_button(f"⬇️ {file.name}", file.getvalue(), file.name)
+
+else:
+    st.info("📁 Upload at least one document to begin.")
+
 
